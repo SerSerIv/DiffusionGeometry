@@ -32,6 +32,45 @@ def knn_graph(data_matrix: np.ndarray, knn_kernel: int = 32):
     return nbr_distances, nbr_indices
 
 
+def radius_graph(data_matrix: np.ndarray, radius: float):
+    """
+    Computes graph of neighbours with distance =< radius.
+
+    Parameters
+    ----------
+    data_matrix : array
+        Input data coordinates.
+        Shape: [n, d]
+    radius : float
+        Maximum radius to connect points.
+
+    Returns
+    -------
+    nbr_distances : array
+        Distances to neighbors.
+        Shape: [n, k_max]
+    nbr_indices : array
+        Indices of neighbors.
+        Shape: [n, k_max]
+
+    Rows are padded to a common length with infinite distance entries,
+    so padded entries receive zero kernel weight.
+    """
+
+    nbrs = NearestNeighbors(radius=radius, algorithm="auto").fit(data_matrix)
+    dist, ind = nbrs.radius_neighbors(data_matrix, sort_results=True)
+
+    n = len(ind)
+    k_max = max(len(i) for i in ind)
+    nbr_indices = np.repeat(np.arange(n)[:, None], k_max, axis=1)
+    nbr_distances = np.full((n, k_max), np.inf)
+    for i, (idx, d) in enumerate(zip(ind, dist)):
+        nbr_indices[i, : len(idx)] = idx
+        nbr_distances[i, : len(d)] = d
+
+    return nbr_distances, nbr_indices
+
+
 def compute_local_bandwidths(
     nbr_distances: np.ndarray, k_bandwidth: int = 8, bandwidth_type: str = "l2"
 ):

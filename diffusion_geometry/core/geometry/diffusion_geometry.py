@@ -10,6 +10,7 @@ from diffusion_geometry.core import (
     carre_du_champ_graph,
     carre_du_champ_knn,
     knn_graph,
+    radius_graph,
     markov_chain,
     ImmersedMarkovTriple,
     regularise_bandlimit,
@@ -266,6 +267,7 @@ class DiffusionGeometry:
         cls,
         data_matrix: np.ndarray,
         fixed_bandwidth: Optional[float] = None,
+        kernel_bandwidth_mult: Optional[float] = None,
         **kwargs,
     ) -> "DiffusionGeometry":
         """
@@ -280,7 +282,8 @@ class DiffusionGeometry:
             - n_function_basis (int, default=50): Number of coefficient functions.
             - n_coefficients (int, optional): Number of coefficients.
             - immersion_coords (np.ndarray, optional): Explicit coordinates if different from data.
-            - knn_kernel (int, default=32): Number of neighbours for graph construction.
+            - knn_kernel (int, default=32): Neighbour number for graph construction (ignored if kernel_bandwidth_mult).
+            - kernel_bandwidth_mult (float, default=None): Needs fixed_bandwidth, maximum (scaled) distance for graph.
             - c (float, default=0.0): Parameter for Markov chain construction.
             - bandwidth_variability (float, default=-0.5): Parameter for bandwidth variability.
             - knn_bandwidth (int, default=8): Number of neighbours for bandwidth estimation.
@@ -291,9 +294,18 @@ class DiffusionGeometry:
             - function_basis (np.ndarray, optional): Precomputed basis of coefficient functions.
             - use_mean_centres (bool, default=True): Whether to use mean centering.
         """
-        nbr_distances, nbr_indices = knn_graph(
-            data_matrix=data_matrix, knn_kernel=kwargs.get("knn_kernel", 32)
-        )
+        if kernel_bandwidth_mult is not None:
+            if fixed_bandwidth is None:
+                raise ValueError("kernel_bandwidth_mult requires fixed_bandwidth")
+
+            nbr_distances, nbr_indices = radius_graph(
+                data_matrix=data_matrix, radius=kernel_bandwidth_mult * fixed_bandwidth
+            )
+        else:
+            nbr_distances, nbr_indices = knn_graph(
+                data_matrix=data_matrix, knn_kernel=kwargs.get("knn_kernel", 32)
+            )
+
         kwargs["data_matrix"] = data_matrix
 
         return cls.from_knn_graph(

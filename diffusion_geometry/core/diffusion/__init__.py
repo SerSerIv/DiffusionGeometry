@@ -8,6 +8,7 @@ from .carre_du_champ import (
 
 from .diffusion_process import (
     knn_graph,
+    radius_graph,
     compute_local_bandwidths,
     tune_kernel,
     markov_chain,
@@ -37,6 +38,7 @@ __all__ = [
     "gamma_02",
     "gamma_02_sym",
     "knn_graph",
+    "radius_graph",
     "compute_local_bandwidths",
     "tune_kernel",
     "markov_chain",
